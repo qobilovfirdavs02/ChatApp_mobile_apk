@@ -35,7 +35,7 @@ class SetNewPasswordActivity : AppCompatActivity() {
         }
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
-            .url("http://192.168.99.253:8000/set-new-password")
+            .url("https://web-production-545c.up.railway.app/set-new-password")
             .post(body)
             .build()
 

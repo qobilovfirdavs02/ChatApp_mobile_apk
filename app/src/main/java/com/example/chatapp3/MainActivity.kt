@@ -26,7 +26,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         Log.d("MainActivity", "MainActivity ishga tushdi")
 
-        // SharedPreferences’dan username ni olish
         val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
         currentUser = prefs.getString("username", null) ?: run {
             Log.d("MainActivity", "Username topilmadi, LoginActivity ga o‘tish")
@@ -35,18 +34,22 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // UI elementlarni bog‘lash
         val searchInput = findViewById<EditText>(R.id.searchInput)
         val recyclerView = findViewById<RecyclerView>(R.id.userRecyclerView)
         val logoutButton = findViewById<Button>(R.id.logoutButton)
 
-        // RecyclerView sozlash
-        userAdapter = UserAdapter(currentUser)
+        userAdapter = UserAdapter(currentUser) { selectedUser ->
+            // Foydalanuvchi tanlanganda ChatActivity ga o‘tish
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra("username", currentUser)
+            intent.putExtra("receiver", selectedUser.username)
+            startActivity(intent)
+            Log.d("MainActivity", "ChatActivity ga o‘tildi: $currentUser -> ${selectedUser.username}")
+        }
         recyclerView.adapter = userAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
         Log.d("MainActivity", "RecyclerView sozlandi")
 
-        // Qidiruv funksiyasi
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -55,10 +58,8 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Boshlang‘ich ro‘yxat
         fetchUsers("")
 
-        // Tizimdan chiqish tugmasi logikasi
         logoutButton.setOnClickListener {
             Log.d("MainActivity", "Logout tugmasi bosildi")
             showLogoutConfirmationDialog()
@@ -67,7 +68,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchUsers(query: String) {
         val request = Request.Builder()
-            .url("http://192.168.99.253:8000/users?query=$query")
+            .url("https://web-production-545c.up.railway.app/users?query=$query")
             .get()
             .build()
 
@@ -101,14 +102,13 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    // Birinchi tasdiqlash dialogi
     private fun showLogoutConfirmationDialog() {
         AlertDialog.Builder(this)
             .setTitle("Tizimdan chiqish")
             .setMessage("Tizimdan chiqishni xohlaysizmi?")
             .setPositiveButton("Ha") { _, _ ->
                 Log.d("MainActivity", "Birinchi dialogda Ha bosildi")
-                showFinalConfirmationDialog() // Ikkinchi dialog
+                showFinalConfirmationDialog()
             }
             .setNegativeButton("Yo‘q") { dialog, _ ->
                 Log.d("MainActivity", "Birinchi dialogda Yo‘q bosildi")
@@ -118,14 +118,13 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Ikkinchi tasdiqlash dialogi
     private fun showFinalConfirmationDialog() {
         AlertDialog.Builder(this)
             .setTitle("Tasdiqlash")
             .setMessage("Aniqmisiz?")
             .setPositiveButton("Ha") { _, _ ->
                 Log.d("MainActivity", "Ikkinchi dialogda Ha bosildi")
-                logout() // Tizimdan chiqish
+                logout()
             }
             .setNegativeButton("Yo‘q") { dialog, _ ->
                 Log.d("MainActivity", "Ikkinchi dialogda Yo‘q bosildi")
@@ -135,10 +134,9 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // Tizimdan chiqish funksiyasi
     private fun logout() {
         val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
-        prefs.edit().remove("username").apply() // Username ni o‘chirish
+        prefs.edit().remove("username").apply()
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
         Toast.makeText(this, "Tizimdan chiqildi", Toast.LENGTH_SHORT).show()

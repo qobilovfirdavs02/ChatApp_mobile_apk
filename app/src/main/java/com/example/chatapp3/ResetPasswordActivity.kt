@@ -41,7 +41,7 @@ class ResetPasswordActivity : AppCompatActivity() {
         }
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
-            .url("http://192.168.99.253:8000/reset-password")
+            .url("https://web-production-545c.up.railway.app/reset-password")
             .post(body)
             .build()
 
@@ -68,7 +68,7 @@ class ResetPasswordActivity : AppCompatActivity() {
         }
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
-            .url("http://192.168.99.253:8000/verify-reset-code")
+            .url("https://web-production-545c.up.railway.app/verify-reset-code")
             .post(body)
             .build()
 

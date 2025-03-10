@@ -43,7 +43,7 @@ class ChatActivity : AppCompatActivity() {
         // WebSocket ulanishi
         client = OkHttpClient()
         val request = Request.Builder()
-            .url("ws://192.168.99.253:8000/ws/$currentUser/$receiver")
+            .url("wss://web-production-545c.up.railway.app/ws/$currentUser/$receiver")
             .build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
