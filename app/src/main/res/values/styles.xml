@@ -1,0 +1,19 @@
+<resources>
+    <!-- Kunduzgi rejim -->
+    <style name="AppTheme.Light" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">#1E88E5</item>
+        <item name="colorPrimaryDark">#1565C0</item>
+        <item name="colorAccent">#FF4081</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:textColor">#212121</item>
+    </style>
+
+    <!-- Tungi rejim -->
+    <style name="AppTheme.Dark" parent="Theme.AppCompat">
+        <item name="colorPrimary">#0288D1</item>
+        <item name="colorPrimaryDark">#01579B</item>
+        <item name="colorAccent">#FF4081</item>
+        <item name="android:windowBackground">#212121</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+</resources>
