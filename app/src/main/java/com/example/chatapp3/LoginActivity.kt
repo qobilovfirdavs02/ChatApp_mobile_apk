@@ -2,8 +2,10 @@ package com.example.chatapp3
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import okhttp3.*
@@ -17,19 +19,41 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+        Log.d("LoginActivity", "LoginActivity ishga tushdi")
 
         val usernameInput = findViewById<EditText>(R.id.usernameInput)
         val passwordInput = findViewById<EditText>(R.id.passwordInput)
         val loginButton = findViewById<Button>(R.id.loginButton)
+        val registerText = findViewById<TextView>(R.id.registerText)
+        val forgotPasswordText = findViewById<TextView>(R.id.forgotPasswordText)
+
+        val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
+        if (prefs.contains("username")) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
 
         loginButton.setOnClickListener {
-            val username = usernameInput.text.toString()
-            val password = passwordInput.text.toString()
-            login(username, password)
+            val username = usernameInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
+            if (username.isNotEmpty() && password.isNotEmpty()) {
+                loginUser(username, password)
+            } else {
+                Toast.makeText(this, "Iltimos, barcha maydonlarni to‘ldiring", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        registerText.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
+
+        forgotPasswordText.setOnClickListener {
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
 
-    private fun login(username: String, password: String) {
+    private fun loginUser(username: String, password: String) {
         val json = JSONObject().apply {
             put("username", username)
             put("password", password)
@@ -42,20 +66,26 @@ class LoginActivity : AppCompatActivity() {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread { Toast.makeText(this@LoginActivity, "Xato: ${e.message}", Toast.LENGTH_SHORT).show() }
+                runOnUiThread {
+                    Log.e("LoginActivity", "Login xatosi: ${e.message}")
+                    Toast.makeText(this@LoginActivity, "Server bilan aloqa yo‘q", Toast.LENGTH_SHORT).show()
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string()
-                if (response.isSuccessful) {
-                    runOnUiThread {
+                runOnUiThread {
+                    if (response.isSuccessful && responseBody != null) {
+                        Log.d("LoginActivity", "Login muvaffaqiyatli: $responseBody")
                         val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
                         prefs.edit().putString("username", username).apply()
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                         finish()
+                        Toast.makeText(this@LoginActivity, "Xush kelibsiz, $username!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Log.e("LoginActivity", "Login xatosi: $responseBody")
+                        Toast.makeText(this@LoginActivity, "Login yoki parol xato", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    runOnUiThread { Toast.makeText(this@LoginActivity, responseBody, Toast.LENGTH_SHORT).show() }
                 }
             }
         })

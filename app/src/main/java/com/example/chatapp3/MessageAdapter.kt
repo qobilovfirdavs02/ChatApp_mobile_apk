@@ -6,17 +6,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-data class Message(
-    val id: Int,
-    val sender: String,
-    val content: String,
-    val timestamp: String,
-    val edited: Boolean
-)
-
 class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
     private val messages = mutableListOf<Message>()
-    var onEditClick: ((Message) -> Unit)? = null
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val senderText: TextView = itemView.findViewById(R.id.senderText)
@@ -35,12 +26,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         holder.senderText.text = message.sender
         holder.contentText.text = message.content + if (message.edited) " (tahrirlangan)" else ""
         holder.timestampText.text = message.timestamp
-        if (message.sender == currentUser) {
-            holder.itemView.setOnLongClickListener {
-                onEditClick?.invoke(message)
-                true
-            }
-        }
     }
 
     override fun getItemCount() = messages.size

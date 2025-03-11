@@ -23,24 +23,20 @@ class ChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_chat)
         Log.d("ChatActivity", "ChatActivity ishga tushdi")
 
-        // Intent’dan ma’lumotlarni olish
         currentUser = intent.getStringExtra("username")?.trim() ?: ""
         receiver = intent.getStringExtra("receiver")?.trim() ?: ""
         Log.d("ChatActivity", "CurrentUser: $currentUser, Receiver: $receiver")
 
-        // UI elementlarni bog‘lash
         val recyclerView = findViewById<RecyclerView>(R.id.messageRecyclerView)
         val messageInput = findViewById<EditText>(R.id.messageInput)
         val sendButton = findViewById<Button>(R.id.sendButton)
         val exitButton = findViewById<Button>(R.id.exitButton)
 
-        // RecyclerView sozlash
         messageAdapter = MessageAdapter(currentUser)
         recyclerView.adapter = messageAdapter
         recyclerView.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         Log.d("ChatActivity", "Message RecyclerView sozlandi")
 
-        // WebSocket ulanishi
         client = OkHttpClient()
         val request = Request.Builder()
             .url("wss://web-production-545c.up.railway.app/ws/$currentUser/$receiver")
@@ -69,12 +65,11 @@ class ChatActivity : AppCompatActivity() {
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 runOnUiThread {
                     Log.e("ChatActivity", "WebSocket xatosi: ${t.message}")
-                    Toast.makeText(this@ChatActivity, "Xato: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ChatActivity, "Ulanish xatosi: ${t.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         })
 
-        // Xabar yuborish
         sendButton.setOnClickListener {
             val content = messageInput.text.toString()
             if (content.isNotEmpty()) {
@@ -88,7 +83,6 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        // Chiqish
         exitButton.setOnClickListener {
             finish()
             Log.d("ChatActivity", "ChatActivity yopildi")

@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
         val logoutButton = findViewById<Button>(R.id.logoutButton)
 
         userAdapter = UserAdapter(currentUser) { selectedUser ->
-            // Foydalanuvchi tanlanganda ChatActivity ga o‘tish
             val intent = Intent(this, ChatActivity::class.java)
             intent.putExtra("username", currentUser)
             intent.putExtra("receiver", selectedUser.username)
