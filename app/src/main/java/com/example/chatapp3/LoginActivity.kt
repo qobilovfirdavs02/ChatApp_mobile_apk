@@ -1,25 +1,43 @@
 package com.example.chatapp3
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import org.json.JSONObject
 import java.io.IOException
 
 class LoginActivity : AppCompatActivity() {
-    private val client = OkHttpClient()
+    private val client by lazy { OkHttpClient() }
+
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(this, "Bildirishnomalarni ko‘rish uchun ruxsat kerak", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
         Log.d("LoginActivity", "LoginActivity ishga tushdi")
+
+        // Bildirishnoma ruxsatini so‘rash (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         val usernameInput = findViewById<EditText>(R.id.usernameInput)
         val passwordInput = findViewById<EditText>(R.id.passwordInput)
@@ -77,11 +95,11 @@ class LoginActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (response.isSuccessful && responseBody != null) {
                         Log.d("LoginActivity", "Login muvaffaqiyatli: $responseBody")
+                        val json = JSONObject(responseBody)
                         val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
-                        prefs.edit().putString("username", username).apply()
+                        prefs.edit().putString("username", json.getString("username")).apply()
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                         finish()
-                        Toast.makeText(this@LoginActivity, "Xush kelibsiz, $username!", Toast.LENGTH_SHORT).show()
                     } else {
                         Log.e("LoginActivity", "Login xatosi: $responseBody")
                         Toast.makeText(this@LoginActivity, "Login yoki parol xato", Toast.LENGTH_SHORT).show()
