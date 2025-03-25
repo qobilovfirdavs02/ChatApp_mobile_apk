@@ -26,6 +26,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var receiver: String
     private val CHANNEL_ID = "chat_notifications"
     private val NOTIFICATION_ID = 1
+    private var replyToMessageId: Int? = null // Javob berilayotgan xabar IDsi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,13 @@ class ChatActivity : AppCompatActivity() {
 
         currentUser = intent.getStringExtra("username")?.trim() ?: ""
         receiver = intent.getStringExtra("receiver")?.trim() ?: ""
+
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.apply {
+            title = receiver
+            setDisplayHomeAsUpEnabled(true)
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.messageRecyclerView)
         val messageInput = findViewById<EditText>(R.id.messageInput)
@@ -44,7 +52,14 @@ class ChatActivity : AppCompatActivity() {
         recyclerView.adapter = messageAdapter
         recyclerView.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
 
-        createNotificationChannel() // Bildirishnoma kanalini yaratish
+        // Swipe bilan javob berish
+        messageAdapter.attachSwipeToReply(recyclerView)
+        messageAdapter.onReplyRequested = { message ->
+            replyToMessageId = message.id
+            messageInput.hint = "Javob: ${message.content.take(20)}..."
+        }
+
+        createNotificationChannel()
 
         val request = Request.Builder()
             .url("wss://web-production-545c.up.railway.app/ws/$currentUser/$receiver")
@@ -68,12 +83,14 @@ class ChatActivity : AppCompatActivity() {
                     sender = json.getString("sender"),
                     content = json.getString("content"),
                     timestamp = json.getString("timestamp"),
-                    edited = json.optBoolean("edited", false)
+                    edited = json.optBoolean("edited", false),
+                    reaction = json.optString("reaction", null).takeIf { it.isNotEmpty() },
+                    replyToId = json.optInt("reply_to_id", -1).takeIf { it != -1 }
                 )
                 runOnUiThread {
                     messageAdapter.addMessage(message)
                     recyclerView.scrollToPosition(messageAdapter.itemCount - 1)
-                    if (message.sender != currentUser) { // Faqat boshqa foydalanuvchidan kelgan xabar uchun
+                    if (message.sender != currentUser) {
                         showNotification(message.sender, message.content)
                     }
                 }
@@ -93,15 +110,25 @@ class ChatActivity : AppCompatActivity() {
                 val json = JSONObject().apply {
                     put("content", content)
                     put("action", "send")
+                    if (replyToMessageId != null) {
+                        put("reply_to_id", replyToMessageId)
+                    }
                 }
                 webSocket.send(json.toString())
                 messageInput.text.clear()
+                replyToMessageId = null
+                messageInput.hint = "Xabar yozing"
             }
         }
 
         exitButton.setOnClickListener {
             finish()
         }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     private fun createNotificationChannel() {
@@ -129,12 +156,12 @@ class ChatActivity : AppCompatActivity() {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Ikonka o‘zgartirilishi mumkin
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Yangi xabar: $sender")
             .setContentText(content)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true) // Bosilganda yo‘qoladi
+            .setAutoCancel(true)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, builder.build())

@@ -1,38 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:gravity="start">
 
     <TextView
         android:id="@+id/senderText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="#2196F3"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/replyContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#757575"
         android:textSize="12sp"
-        android:textColor="#757575"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        android:background="#E0E0E0"
+        android:padding="4dp"
+        android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/contentText"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:background="#FFFFFF"
-    android:padding="12dp"
-    android:textColor="#212121"
-    app:layout_constraintTop_toBottomOf="@id/senderText"
-    app:layout_constraintStart_toStartOf="parent"
-    android:layout_marginTop="4dp"/>
+        android:padding="8dp"
+        android:layout_marginTop="4dp">
 
-    <TextView
-        android:id="@+id/timestampText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="10sp"
-        android:textColor="#757575"
-        app:layout_constraintTop_toBottomOf="@id/contentText"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="4dp"/>
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/contentText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/timestampText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#757575"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/messageReaction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp" />
+    </LinearLayout>
+</LinearLayout>
