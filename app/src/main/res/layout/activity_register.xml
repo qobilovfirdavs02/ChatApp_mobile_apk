@@ -1,61 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#F5F5F5"
-    android:padding="24dp"
-    android:gravity="center">
+    android:background="@drawable/gradient_background"
+    android:padding="16dp">
 
+    <!-- Header -->
     <TextView
+        android:id="@+id/registerTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Ro‘yxatdan o‘tish"
         android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="#2196F3"
-        android:layout_marginBottom="32dp"/>
+        android:textColor="#FFFFFF"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"
+        android:fontFamily="sans-serif-condensed" />
 
+    <!-- Username -->
     <EditText
         android:id="@+id/usernameInput"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:hint="Foydalanuvchi nomi"
-        android:inputType="text"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#B0FFFFFF"
+        android:background="@drawable/input_background"
         android:padding="12dp"
-        android:textColor="@color/black"
-        android:background="@drawable/edit_text_background"
-        android:layout_marginBottom="16dp"/>
+        android:layout_below="@id/registerTitle"
+        android:layout_marginTop="40dp"
+        android:drawableStart="@drawable/ic_user"
+        android:drawablePadding="8dp"
+        android:textSize="16sp" />
 
+    <!-- Email -->
     <EditText
         android:id="@+id/emailInput"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:hint="Email"
-        android:inputType="textEmailAddress"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#B0FFFFFF"
+        android:background="@drawable/input_background"
         android:padding="12dp"
-        android:textColor="@color/black"
-        android:background="@drawable/edit_text_background"
-        android:layout_marginBottom="16dp"/>
+        android:layout_below="@id/usernameInput"
+        android:layout_marginTop="16dp"
+        android:drawableStart="@android:drawable/ic_dialog_email"
+        android:drawablePadding="8dp"
+        android:inputType="textEmailAddress"
+        android:textSize="16sp" />
 
+    <!-- Password -->
     <EditText
         android:id="@+id/passwordInput"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:hint="Parol"
-        android:inputType="textPassword"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#B0FFFFFF"
+        android:background="@drawable/input_background"
         android:padding="12dp"
-        android:textColor="@color/black"
-        android:background="@drawable/edit_text_background"
-        android:layout_marginBottom="24dp"/>
+        android:layout_below="@id/emailInput"
+        android:layout_marginTop="16dp"
+        android:drawableStart="@android:drawable/ic_lock_idle_lock"
+        android:drawableEnd="@drawable/ic_eye"
+        android:drawablePadding="8dp"
+        android:inputType="textPassword"
+        android:textSize="16sp" />
 
+    <!-- Verify Password -->
+    <EditText
+        android:id="@+id/verifyPasswordInput"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Parolni tasdiqlash"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#B0FFFFFF"
+        android:background="@drawable/input_background"
+        android:padding="12dp"
+        android:layout_below="@id/passwordInput"
+        android:layout_marginTop="16dp"
+        android:drawableStart="@android:drawable/ic_lock_idle_lock"
+        android:drawableEnd="@drawable/ic_eye"
+        android:drawablePadding="8dp"
+        android:inputType="textPassword"
+        android:textSize="16sp" />
+
+    <!-- Register Button -->
     <Button
         android:id="@+id/registerButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ro‘yxatdan o‘tish"
+        android:textSize="18sp"
         android:textColor="#FFFFFF"
-        android:backgroundTint="#2196F3"
-        android:padding="12dp"/>
-</LinearLayout>
+        android:background="@drawable/button_background"
+        android:padding="12dp"
+        android:layout_below="@id/verifyPasswordInput"
+        android:layout_marginTop="24dp"
+        android:elevation="4dp" />
+
+    <!-- Footer -->
+    <TextView
+        android:id="@+id/footerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SMchat developed by FirdavsQ02 © All rights reserved"
+        android:textSize="12sp"
+        android:textColor="#B0FFFFFF"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp" />
+</RelativeLayout>

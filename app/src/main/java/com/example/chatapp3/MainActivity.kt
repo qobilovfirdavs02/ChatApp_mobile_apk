@@ -7,6 +7,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -17,18 +18,21 @@ import org.json.JSONArray
 import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
-    private val client = OkHttpClient()
     private lateinit var userAdapter: UserAdapter
     private lateinit var currentUser: String
+    private val client by lazy { OkHttpClient() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Rejimni yuklash
+        val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
+        val isDarkMode = prefs.getBoolean("isDarkMode", false)
+        setTheme(if (isDarkMode) R.style.Theme_ChatApp_Dark else R.style.Theme_ChatApp_Light)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Log.d("MainActivity", "MainActivity ishga tushdi")
 
-        val prefs = getSharedPreferences("ChatApp", MODE_PRIVATE)
         currentUser = prefs.getString("username", null) ?: run {
-            Log.d("MainActivity", "Username topilmadi, LoginActivity ga o‘tish")
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
@@ -37,17 +41,24 @@ class MainActivity : AppCompatActivity() {
         val searchInput = findViewById<EditText>(R.id.searchInput)
         val recyclerView = findViewById<RecyclerView>(R.id.userRecyclerView)
         val logoutButton = findViewById<Button>(R.id.logoutButton)
+        val themeToggleButton = Button(this).apply {
+            text = if (isDarkMode) "Kunduzgi rejim" else "Tungi rejim"
+            setOnClickListener {
+                val newMode = !isDarkMode
+                prefs.edit().putBoolean("isDarkMode", newMode).apply()
+                recreate() // Activity’ni qayta yuklash
+            }
+        }
+        findViewById<LinearLayout>(R.id.headerLayout)?.addView(themeToggleButton)
 
         userAdapter = UserAdapter(currentUser) { selectedUser ->
             val intent = Intent(this, ChatActivity::class.java)
             intent.putExtra("username", currentUser)
             intent.putExtra("receiver", selectedUser.username)
             startActivity(intent)
-            Log.d("MainActivity", "ChatActivity ga o‘tildi: $currentUser -> ${selectedUser.username}")
         }
         recyclerView.adapter = userAdapter
         recyclerView.layoutManager = LinearLayoutManager(this)
-        Log.d("MainActivity", "RecyclerView sozlandi")
 
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -60,8 +71,15 @@ class MainActivity : AppCompatActivity() {
         fetchUsers("")
 
         logoutButton.setOnClickListener {
-            Log.d("MainActivity", "Logout tugmasi bosildi")
-            showLogoutConfirmationDialog()
+            it.animate()
+                .scaleX(0.9f)
+                .scaleY(0.9f)
+                .setDuration(100)
+                .withEndAction {
+                    it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    showLogoutConfirmationDialog()
+                }
+                .start()
         }
     }
 

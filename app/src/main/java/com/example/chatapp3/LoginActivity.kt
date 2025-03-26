@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.method.PasswordTransformationMethod
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -14,7 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONObject
 import java.io.IOException
 
@@ -32,7 +33,6 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
         Log.d("LoginActivity", "LoginActivity ishga tushdi")
 
-        // Bildirishnoma ruxsatini so‘rash (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -50,6 +50,23 @@ class LoginActivity : AppCompatActivity() {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
             return
+        }
+
+        // Parolni ko‘rish uchun ko‘z belgisini sozlash
+        passwordInput.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            R.drawable.ic_lock, 0, R.drawable.ic_eye, 0
+        )
+
+        var isPasswordVisible = false
+        passwordInput.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                if (event.rawX >= (passwordInput.right - passwordInput.compoundDrawables[2].bounds.width())) {
+                    isPasswordVisible = !isPasswordVisible
+                    passwordInput.transformationMethod = if (isPasswordVisible) null else PasswordTransformationMethod.getInstance()
+                    return@setOnTouchListener true
+                }
+            }
+            false
         }
 
         loginButton.setOnClickListener {
@@ -76,7 +93,7 @@ class LoginActivity : AppCompatActivity() {
             put("username", username)
             put("password", password)
         }
-        val body = RequestBody.create("application/json".toMediaType(), json.toString())
+        val body = RequestBody.create("application/json".toMediaTypeOrNull(), json.toString())
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/login")
             .post(body)

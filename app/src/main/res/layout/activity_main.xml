@@ -1,28 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@drawable/gradient_background">
 
-    <EditText
-        android:id="@+id/searchInput"
+    <!-- Header qismi -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Foydalanuvchi qidirish"
-        android:inputType="text"/>
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@drawable/header_background"
+        android:elevation="4dp">
 
+        <TextView
+            android:id="@+id/appTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SM CHAT"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_gravity="center_horizontal"
+            android:fontFamily="sans-serif-condensed" />
+
+        <EditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Foydalanuvchi qidiring..."
+            android:textColor="#FFFFFF"
+            android:textColorHint="#B0FFFFFF"
+            android:background="@drawable/search_background"
+            android:padding="12dp"
+            android:layout_marginTop="12dp"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="8dp"
+            android:textSize="16sp"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/userRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_below="@id/headerLayout"
+        android:layout_above="@id/logoutButton"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
 
+    <!-- Chiqish tugmasi -->
     <Button
         android:id="@+id/logoutButton"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tizimdan chiqish"
-        android:layout_marginTop="16dp"/>
-</LinearLayout>
+        android:text="Chiqish"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/logout_button_background"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="12dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:elevation="4dp" />
+
+</RelativeLayout>

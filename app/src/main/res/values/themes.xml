@@ -1,9 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Chatapp3" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <!-- Kunduzgi tema -->
+    <style name="Theme.ChatApp.Light" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/light_primary</item>
+        <item name="colorPrimaryVariant">@color/light_primary_variant</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/light_secondary</item>
+        <item name="android:statusBarColor">@color/light_primary_variant</item>
     </style>
 
-    <style name="Theme.Chatapp3" parent="Base.Theme.Chatapp3" />
+    <!-- Tungi tema -->
+    <style name="Theme.ChatApp.Dark" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorPrimaryVariant">@color/dark_primary_variant</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/dark_secondary</item>
+        <item name="android:statusBarColor">@color/dark_primary_variant</item>
+        <item name="android:windowBackground">@color/dark_background</item>
+    </style>
 </resources>

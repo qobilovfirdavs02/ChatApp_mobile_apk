@@ -4,53 +4,66 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@drawable/chat_gradient_background">
 
+    <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#2196F3"
-        app:titleTextColor="#FFFFFF" />
+        android:background="@drawable/toolbar_gradient"
+        app:titleTextColor="#FFFFFF"
+        android:elevation="4dp" />
 
+    <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/messageRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
 
+    <!-- Input Layout -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:background="@drawable/input_bar_background"
+        android:elevation="4dp">
+
+        <!-- Media tanlash tugmasi -->
+        <ImageButton
+            android:id="@+id/mediaButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_attach"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Media tanlash" />
 
         <EditText
             android:id="@+id/messageInput"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:hint="Xabar yozing"
-            android:textColor="@color/black"
+            android:textColor="#000000"
+            android:textColorHint="#757575"
+            android:background="@drawable/message_input_background"
             android:padding="12dp"
-            android:background="@drawable/edit_text_background" />
+            android:textSize="16sp"
+            android:maxLines="3" />
 
-        <Button
+        <!-- Yuborish tugmasi (logo bilan) -->
+        <ImageButton
             android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Yuborish"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#2196F3"
-            android:layout_marginStart="8dp" />
-
-        <Button
-            android:id="@+id/exitButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chiqish"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#F44336"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_send"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Xabar yuborish"
             android:layout_marginStart="8dp" />
     </LinearLayout>
 </LinearLayout>
