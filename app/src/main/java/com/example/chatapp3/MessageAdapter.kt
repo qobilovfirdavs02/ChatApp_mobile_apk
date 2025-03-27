@@ -16,6 +16,9 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import org.json.JSONObject
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.widget.Toast
 
 class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
     val messages = mutableListOf<Message>()
@@ -46,6 +49,13 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.contentText.text = "This message was deleted"
             holder.contentText.setTextColor(Color.GRAY)
             holder.contentText.setTypeface(null, Typeface.ITALIC)
+            // Izsiz o‘chirish uchun uzun bosish
+            holder.itemView.setOnLongClickListener {
+                if (message.sender == currentUser) {
+                    showPermanentDeleteDialog(context, message, position)
+                }
+                true
+            }
         } else if (isImageUrl) {
             holder.contentText.visibility = View.GONE
             (holder.contentImage.parent as View).visibility = View.VISIBLE
@@ -60,6 +70,12 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
                 intent.putExtra("image_url", message.content)
                 holder.itemView.context.startActivity(intent)
             }
+            holder.itemView.setOnLongClickListener {
+                if (message.sender == currentUser) {
+                    showEditDeleteDialog(context, message, position)
+                }
+                true
+            }
         } else {
             holder.contentText.visibility = View.VISIBLE
             (holder.contentImage.parent as View).visibility = View.GONE
@@ -68,6 +84,12 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.contentText.text = message.content + if (message.edited) " (edited)" else ""
             holder.contentText.setTextColor(Color.BLACK)
             holder.contentText.setTypeface(null, Typeface.NORMAL)
+            holder.itemView.setOnLongClickListener {
+                if (message.sender == currentUser) {
+                    showEditDeleteDialog(context, message, position)
+                }
+                true
+            }
         }
 
         if (message.replyToId != null) {
@@ -77,25 +99,31 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         } else {
             holder.replyText?.visibility = View.GONE
         }
-
-        // Uzun bosish bilan dialog ochish
-        holder.itemView.setOnLongClickListener {
-            if (message.sender == currentUser && !message.deleted) { // Faqat o‘z xabarimiz va o‘chirilmagan bo‘lsa
-                showEditDeleteDialog(holder.itemView.context, message, position)
-            }
-            true
-        }
     }
+
     private fun showEditDeleteDialog(context: Context, message: Message, position: Int) {
-        val options = arrayOf("Edit", "Delete")
+        val options = arrayOf("Edit", "Delete for me", "Delete for all", "Copy")
         AlertDialog.Builder(context)
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> showEditDialog(context, message, position) // Tahrirlash
-                    1 -> deleteMessage(message, position) // O‘chirish
+                    1 -> deleteMessage(message, position, false) // O‘zim uchun o‘chirish
+                    2 -> deleteMessage(message, position, true) // Hamma uchun o‘chirish
+                    3 -> copyMessage(context, message) // Nusxalash
                 }
             }
             .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showPermanentDeleteDialog(context: Context, message: Message, position: Int) {
+        AlertDialog.Builder(context)
+            .setTitle("Xabarni to‘liq o‘chirish")
+            .setMessage("Bu xabarni izsiz o‘chirishni xohlaysizmi?")
+            .setPositiveButton("Ha") { _, _ ->
+                permanentDeleteMessage(message, position)
+            }
+            .setNegativeButton("Yo‘q", null)
             .show()
     }
 
@@ -121,7 +149,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         message.edited = true
         notifyItemChanged(position)
 
-        // Serverga yangilangan xabarni yuborish
         val activity = context as? ChatActivity
         activity?.let {
             val json = JSONObject().apply {
@@ -133,20 +160,41 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         }
     }
 
-    private fun deleteMessage(message: Message, position: Int) {
+    private fun deleteMessage(message: Message, position: Int, deleteForAll: Boolean) {
         message.deleted = true
         message.content = "This message was deleted"
         notifyItemChanged(position)
 
-        // Serverga o‘chirish so‘rovini yuborish
         val activity = context as? ChatActivity
         activity?.let {
             val json = JSONObject().apply {
                 put("msg_id", message.id)
                 put("action", "delete")
+                put("delete_for_all", deleteForAll)
             }
             it.sendMessage(json.toString())
         }
+    }
+
+    private fun permanentDeleteMessage(message: Message, position: Int) {
+        messages.removeAt(position)
+        notifyItemRemoved(position)
+
+        val activity = context as? ChatActivity
+        activity?.let {
+            val json = JSONObject().apply {
+                put("msg_id", message.id)
+                put("action", "delete_permanent")
+            }
+            it.sendMessage(json.toString())
+        }
+    }
+
+    private fun copyMessage(context: Context, message: Message) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Chat Message", message.content)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(context, "Xabar nusxalandi", Toast.LENGTH_SHORT).show()
     }
 
 

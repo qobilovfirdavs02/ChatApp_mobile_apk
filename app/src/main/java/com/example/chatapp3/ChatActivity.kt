@@ -18,16 +18,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.chatapp3.network.NetworkUtils
-import okhttp3.*
+import com.example.chatapp3.network.WebSocketManager
+import okhttp3.OkHttpClient
 import org.json.JSONObject
 import java.io.File
-import androidx.core.app.NotificationCompat
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,18 +36,17 @@ import java.util.*
 class ChatActivity : AppCompatActivity() {
     private val client by lazy { OkHttpClient() }
     private val networkUtils by lazy { NetworkUtils(client) }
-    private lateinit var webSocket: WebSocket
+    private lateinit var webSocketManager: WebSocketManager
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var currentUser: String
     private lateinit var receiver: String
     private val CHANNEL_ID = "chat_notifications"
     private val NOTIFICATION_ID = 1
     private var replyToMessageId: Int? = null
-    private val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
     private lateinit var tempMediaUri: Uri
-    private var isChatActive = false
+    var isChatActive = false
 
-    // Media tanlash uchun launcher’lar
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { sendMedia(it) }
     }
@@ -56,8 +56,6 @@ class ChatActivity : AppCompatActivity() {
     private val recordVideoLauncher = registerForActivityResult(ActivityResultContracts.CaptureVideo()) { success ->
         if (success) sendMedia(tempMediaUri)
     }
-
-    // Ruxsat so‘rash uchun launcher’lar
     private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) takePicture() else Toast.makeText(this, "Kamera ruxsati rad etildi", Toast.LENGTH_SHORT).show()
     }
@@ -69,8 +67,6 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
         Log.d("ChatActivity", "ChatActivity ishga tushdi")
-
-        isChatActive = true
 
         currentUser = intent.getStringExtra("username")?.trim() ?: ""
         receiver = intent.getStringExtra("receiver")?.trim() ?: ""
@@ -97,8 +93,10 @@ class ChatActivity : AppCompatActivity() {
             messageInput.hint = "Javob: ${message.content.take(20)}..."
         }
 
+        // WebSocketManager’ni ishga tushirish
+        webSocketManager = WebSocketManager(client, messageAdapter, recyclerView, currentUser, receiver, dateFormat, this)
+
         createNotificationChannel()
-        setupWebSocket()
 
         sendButton.setOnClickListener {
             val content = messageInput.text.toString().trim()
@@ -108,7 +106,7 @@ class ChatActivity : AppCompatActivity() {
                     put("action", "send")
                     if (replyToMessageId != null) put("reply_to_id", replyToMessageId)
                 }
-                sendMessage(json.toString())
+                webSocketManager.sendMessage(json.toString())
                 messageInput.text.clear()
                 replyToMessageId = null
                 messageInput.hint = "Xabar yozing"
@@ -118,87 +116,23 @@ class ChatActivity : AppCompatActivity() {
         mediaButton.setOnClickListener { showMediaOptionsDialog() }
     }
 
-    private fun setupWebSocket() {
-        val request = Request.Builder()
-            .url("wss://web-production-545c.up.railway.app/ws/$currentUser/$receiver")
-            .build()
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d("ChatActivity", "WebSocket ulanishi ochildi")
-            }
+    fun sendMessage(message: String) {
+        webSocketManager.sendMessage(message)
+    }
 
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                Log.d("ChatActivity", "Xabar keldi: $text")
-                val json = JSONObject(text)
-                if (json.has("error")) {
-                    runOnUiThread { Toast.makeText(this@ChatActivity, json.getString("error"), Toast.LENGTH_SHORT).show() }
-                    return
-                }
-                val action = json.optString("action", "send")
-                when (action) {
-                    "send" -> {
-                        val rawTimestamp = json.getString("timestamp")
-                        val formattedTimestamp = try {
-                            val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(rawTimestamp)
-                            dateFormat.format(date)
-                        } catch (e: Exception) {
-                            rawTimestamp
-                        }
-                        val message = Message(
-                            id = json.getInt("msg_id"),
-                            sender = json.getString("sender"),
-                            content = json.getString("content"),
-                            timestamp = formattedTimestamp,
-                            edited = json.optBoolean("edited", false),
-                            deleted = json.optBoolean("deleted", false),
-                            reaction = json.optString("reaction", null).takeIf { it.isNotEmpty() },
-                            replyToId = json.optInt("reply_to_id", -1).takeIf { it != -1 }
-                        )
-                        runOnUiThread {
-                            if (messageAdapter.messages.none { it.id == message.id }) {
-                                messageAdapter.addMessage(message)
-                                findViewById<RecyclerView>(R.id.messageRecyclerView).scrollToPosition(messageAdapter.itemCount - 1)
-                                if (message.sender != currentUser && !isChatActive) {
-                                    showNotification(message.sender, message.content)
-                                }
-                            }
-                        }
-                    }
-                    "edit" -> {
-                        val msgId = json.getInt("msg_id")
-                        val newContent = json.getString("content")
-                        runOnUiThread {
-                            val message = messageAdapter.messages.find { it.id == msgId }
-                            message?.let {
-                                it.content = newContent
-                                it.edited = true
-                                val position = messageAdapter.messages.indexOf(it)
-                                messageAdapter.notifyItemChanged(position)
-                            }
-                        }
-                    }
-                    "delete" -> {
-                        val msgId = json.getInt("msg_id")
-                        runOnUiThread {
-                            val message = messageAdapter.messages.find { it.id == msgId }
-                            message?.let {
-                                it.deleted = true
-                                it.content = "This message was deleted"
-                                val position = messageAdapter.messages.indexOf(it)
-                                messageAdapter.notifyItemChanged(position)
-                            }
-                        }
-                    }
-                }
-            }
+    override fun onResume() {
+        super.onResume()
+        isChatActive = true
+    }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                runOnUiThread {
-                    Log.e("ChatActivity", "WebSocket xatosi: ${t.message}")
-                    Toast.makeText(this@ChatActivity, "Ulanish xatosi", Toast.LENGTH_SHORT).show()
-                }
-            }
-        })
+    override fun onPause() {
+        super.onPause()
+        isChatActive = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webSocketManager.closeWebSocket()
     }
 
     private fun showMediaOptionsDialog() {
@@ -283,7 +217,7 @@ class ChatActivity : AppCompatActivity() {
             onSuccess = { message ->
                 runOnUiThread {
                     progressBar?.isVisible = false
-                    messageAdapter.messages[position] = message // Dummy’ni yangilash
+                    messageAdapter.messages[position] = message
                     messageAdapter.notifyItemChanged(position)
                     recyclerView.scrollToPosition(messageAdapter.itemCount - 1)
                 }
@@ -292,7 +226,7 @@ class ChatActivity : AppCompatActivity() {
                     put("action", "send")
                     if (replyToMessageId != null) put("reply_to_id", replyToMessageId)
                 }
-                sendMessage(json.toString())
+                webSocketManager.sendMessage(json.toString())
                 replyToMessageId = null
             },
             onFailure = { error ->
@@ -318,16 +252,12 @@ class ChatActivity : AppCompatActivity() {
         return file
     }
 
-    fun sendMessage(message: String) {
-        webSocket.send(message)
-    }
-
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
     }
 
-    private fun createNotificationChannel() {
+    fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Chat Notifications"
             val descriptionText = "New message notifications"
@@ -337,17 +267,8 @@ class ChatActivity : AppCompatActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    // Chat holatini yangilash
-    override fun onResume() {
-        super.onResume()
-        isChatActive = true // Chat ochiq
-    }
 
-    override fun onPause() {
-        super.onPause()
-        isChatActive = false // Chat fon rejimida
-    }
-    private fun showNotification(sender: String, content: String) {
+    fun showNotification(sender: String, content: String) {
         val intent = Intent(this, ChatActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("username", currentUser)
@@ -364,12 +285,7 @@ class ChatActivity : AppCompatActivity() {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, builder.build())
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        webSocket.close(1000, "Activity yopildi")
     }
 }
