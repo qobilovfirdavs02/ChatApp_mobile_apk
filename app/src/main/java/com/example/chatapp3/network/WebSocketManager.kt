@@ -78,7 +78,7 @@ class WebSocketManager(
                                 messageAdapter.notifyItemChanged(position)
                             }
                             if (message.sender != currentUser && !activity.isChatActive) {
-                                activity.showNotification(message.sender, message.content)
+                                activity.showNotification(message.sender, message.content) // Bu yerda NotificationManager ishlatiladi
                             }
                         }
                     }

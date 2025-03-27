@@ -49,11 +49,10 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.contentText.text = "This message was deleted"
             holder.contentText.setTextColor(Color.GRAY)
             holder.contentText.setTypeface(null, Typeface.ITALIC)
-            // Izsiz o‘chirish uchun uzun bosish
             holder.itemView.setOnLongClickListener {
-                if (message.sender == currentUser) {
-                    showPermanentDeleteDialog(context, message, position)
-                }
+                // "This message was deleted" ga uzun bosganda mahalliy o‘chirish
+                messages.removeAt(position)
+                notifyItemRemoved(position)
                 true
             }
         } else if (isImageUrl) {
@@ -70,9 +69,12 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
                 intent.putExtra("image_url", message.content)
                 holder.itemView.context.startActivity(intent)
             }
+            // Suratga uzun bosish
             holder.itemView.setOnLongClickListener {
                 if (message.sender == currentUser) {
-                    showEditDeleteDialog(context, message, position)
+                    showImageOptionsDialog(context, message, position)
+                } else {
+                    showOtherUserOptionsDialog(context, message, position)
                 }
                 true
             }
@@ -81,12 +83,15 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             (holder.contentImage.parent as View).visibility = View.GONE
             holder.contentImage.visibility = View.GONE
             holder.uploadProgress?.visibility = View.GONE
-            holder.contentText.text = message.content + if (message.edited) " (edited)" else ""
+            holder.contentText.text = "Xabar yuklanmoqda...".takeIf { message.content.isEmpty() } ?: message.content + if (message.edited) " (edited)" else ""
             holder.contentText.setTextColor(Color.BLACK)
             holder.contentText.setTypeface(null, Typeface.NORMAL)
+            // Matnga uzun bosish
             holder.itemView.setOnLongClickListener {
                 if (message.sender == currentUser) {
                     showEditDeleteDialog(context, message, position)
+                } else {
+                    showOtherUserOptionsDialog(context, message, position)
                 }
                 true
             }
@@ -100,16 +105,42 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.replyText?.visibility = View.GONE
         }
     }
+    private fun showOtherUserOptionsDialog(context: Context, message: Message, position: Int) {
+        val options = arrayOf("Delete for me", "Copy")
+        AlertDialog.Builder(context)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> deleteMessage(message, position, false) // Faqat mahalliy o‘chirish
+                    1 -> copyMessage(context, message)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     private fun showEditDeleteDialog(context: Context, message: Message, position: Int) {
         val options = arrayOf("Edit", "Delete for me", "Delete for all", "Copy")
         AlertDialog.Builder(context)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showEditDialog(context, message, position) // Tahrirlash
-                    1 -> deleteMessage(message, position, false) // O‘zim uchun o‘chirish
-                    2 -> deleteMessage(message, position, true) // Hamma uchun o‘chirish
-                    3 -> copyMessage(context, message) // Nusxalash
+                    0 -> showEditDialog(context, message, position)
+                    1 -> deleteMessage(message, position, false)
+                    2 -> deleteMessage(message, position, true)
+                    3 -> copyMessage(context, message)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showImageOptionsDialog(context: Context, message: Message, position: Int) {
+        val options = arrayOf("Delete for me", "Delete for all", "Copy")
+        AlertDialog.Builder(context)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> deleteMessage(message, position, false)
+                    1 -> deleteMessage(message, position, true)
+                    2 -> copyMessage(context, message)
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -161,18 +192,26 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
     }
 
     private fun deleteMessage(message: Message, position: Int, deleteForAll: Boolean) {
-        message.deleted = true
-        message.content = "This message was deleted"
-        notifyItemChanged(position)
+        if (deleteForAll && message.sender == currentUser) {
+            // "Delete for all" faqat o‘z xabarimiz uchun serverga yuboriladi
+            message.deleted = true
+            message.content = "This message was deleted"
+            notifyItemChanged(position)
 
-        val activity = context as? ChatActivity
-        activity?.let {
-            val json = JSONObject().apply {
-                put("msg_id", message.id)
-                put("action", "delete")
-                put("delete_for_all", deleteForAll)
+            val activity = context as? ChatActivity
+            activity?.let {
+                val json = JSONObject().apply {
+                    put("msg_id", message.id)
+                    put("action", "delete")
+                    put("delete_for_all", true)
+                }
+                it.sendMessage(json.toString())
             }
-            it.sendMessage(json.toString())
+        } else {
+            // "Delete for me" yoki boshqa foydalanuvchi xabari - mahalliy izsiz o‘chirish
+            messages.removeAt(position)
+            notifyItemRemoved(position)
+            // Serverga yuborilmaydi, chunki faqat mahalliy o‘chirish
         }
     }
 
@@ -194,7 +233,8 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Chat Message", message.content)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "Xabar nusxalandi", Toast.LENGTH_SHORT).show()
+        val toastText = if (message.content.startsWith("https://")) "Surat URL’i nusxalandi" else "Xabar nusxalandi"
+        Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
     }
 
 
