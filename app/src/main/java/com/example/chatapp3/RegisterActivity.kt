@@ -87,6 +87,7 @@ class RegisterActivity : AppCompatActivity() {
         val body = RequestBody.create("application/json".toMediaTypeOrNull(), json.toString())
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/register")
+//            .url("https://web-production-0e0f.up.railway.app/register")
             .post(body)
             .build()
 

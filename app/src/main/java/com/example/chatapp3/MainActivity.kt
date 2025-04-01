@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
     private fun fetchUsers(query: String) {
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/users?query=$query")
+//            .url("https://web-production-0e0f.up.railway.app/users?query=$query")
             .get()
             .build()
 
@@ -138,7 +139,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFinalConfirmationDialog() {
         AlertDialog.Builder(this)
             .setTitle("Tasdiqlash")
-            .setMessage("Aniqmisiz?")
+            .setMessage("Aminmisiz?")
             .setPositiveButton("Ha") { _, _ ->
                 Log.d("MainActivity", "Ikkinchi dialogda Ha bosildi")
                 logout()

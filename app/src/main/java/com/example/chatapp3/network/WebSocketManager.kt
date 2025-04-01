@@ -33,6 +33,7 @@ class WebSocketManager(
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.d("WebSocketManager", "WebSocket ulanishi ochildi")
+                webSocket.send("""{"action": "fetch"}""") // Backendda fetch qo‘llab-quvvatlanadi deb taxmin qildim
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -49,7 +50,10 @@ class WebSocketManager(
                     "send" -> {
                         val rawTimestamp = json.getString("timestamp")
                         val formattedTimestamp = try {
-                            val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(rawTimestamp)
+                            val date = SimpleDateFormat(
+                                "yyyy-MM-dd'T'HH:mm:ss",
+                                Locale.getDefault()
+                            ).parse(rawTimestamp)
                             dateFormat.format(date)
                         } catch (e: Exception) {
                             rawTimestamp
@@ -78,7 +82,7 @@ class WebSocketManager(
                                 messageAdapter.notifyItemChanged(position)
                             }
                             if (message.sender != currentUser && !activity.isChatActive) {
-                                activity.showNotification(message.sender, message.content) // Bu yerda NotificationManager ishlatiladi
+                                activity.showNotification(message.sender, message.content)
                             }
                         }
                     }
@@ -101,17 +105,10 @@ class WebSocketManager(
                         activity.runOnUiThread {
                             val message = messageAdapter.messages.find { it.id == msgId }
                             message?.let {
-                                if (deleteForAll) {
-                                    it.deleted = true
-                                    it.content = "This message was deleted"
-                                    val position = messageAdapter.messages.indexOf(it)
-                                    messageAdapter.notifyItemChanged(position)
-                                } else {
-                                    it.deleted = true
-                                    it.content = "This message was deleted"
-                                    val position = messageAdapter.messages.indexOf(it)
-                                    messageAdapter.notifyItemChanged(position)
-                                }
+                                it.deleted = true
+                                it.content = "This message was deleted"
+                                val position = messageAdapter.messages.indexOf(it)
+                                messageAdapter.notifyItemChanged(position)
                             }
                         }
                     }
@@ -123,6 +120,18 @@ class WebSocketManager(
                                 val position = messageAdapter.messages.indexOf(it)
                                 messageAdapter.messages.removeAt(position)
                                 messageAdapter.notifyItemRemoved(position)
+                            }
+                        }
+                    }
+                    "react" -> {
+                        val msgId = json.getInt("msg_id")
+                        val reaction = json.getString("reaction")
+                        activity.runOnUiThread {
+                            val message = messageAdapter.messages.find { it.id == msgId }
+                            message?.let {
+                                it.reaction = reaction
+                                val position = messageAdapter.messages.indexOf(it)
+                                messageAdapter.notifyItemChanged(position)
                             }
                         }
                     }
@@ -148,5 +157,22 @@ class WebSocketManager(
 
     fun closeWebSocket() {
         webSocket.close(1000, "Activity yopildi")
+    }
+
+    fun deleteMessage(msgId: Int, deleteForAll: Boolean) {
+        val json = JSONObject().apply {
+            put("action", "delete")
+            put("msg_id", msgId)
+            put("delete_for_all", deleteForAll)
+        }
+        webSocket.send(json.toString())
+    }
+
+    fun deleteMessagePermanent(msgId: Int) {
+        val json = JSONObject().apply {
+            put("action", "delete_permanent")
+            put("msg_id", msgId)
+        }
+        webSocket.send(json.toString())
     }
 }

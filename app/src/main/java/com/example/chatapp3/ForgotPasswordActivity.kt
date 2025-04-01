@@ -67,6 +67,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/reset-password")
+//            .url("https://web-production-0e0f.up.railway.app/reset-password")
             .post(body)
             .build()
 
@@ -103,6 +104,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/verify-reset-code")
+//            .url("https://web-production-0e0f.up.railway.app/verify-reset-code")
             .post(body)
             .build()
 
@@ -141,6 +143,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
         val body = RequestBody.create("application/json".toMediaType(), json.toString())
         val request = Request.Builder()
             .url("https://web-production-545c.up.railway.app/set-new-password")
+//            .url("https://web-production-0e0f.up.railway.app/set-new-password")
             .post(body)
             .build()
 

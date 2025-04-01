@@ -18,6 +18,8 @@ import com.bumptech.glide.Glide
 import org.json.JSONObject
 import android.content.ClipboardManager
 import android.content.ClipData
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.Toast
 
 class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
@@ -50,9 +52,11 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.contentText.setTextColor(Color.GRAY)
             holder.contentText.setTypeface(null, Typeface.ITALIC)
             holder.itemView.setOnLongClickListener {
-                // "This message was deleted" ga uzun bosganda mahalliy o‘chirish
-                messages.removeAt(position)
-                notifyItemRemoved(position)
+                if (message.sender == currentUser) {
+                    showPermanentDeleteDialog(context, message, position)
+                } else {
+                    showOtherUserOptionsDialog(context, message, position)
+                }
                 true
             }
         } else if (isImageUrl) {
@@ -69,7 +73,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
                 intent.putExtra("image_url", message.content)
                 holder.itemView.context.startActivity(intent)
             }
-            // Suratga uzun bosish
             holder.itemView.setOnLongClickListener {
                 if (message.sender == currentUser) {
                     showImageOptionsDialog(context, message, position)
@@ -83,10 +86,9 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             (holder.contentImage.parent as View).visibility = View.GONE
             holder.contentImage.visibility = View.GONE
             holder.uploadProgress?.visibility = View.GONE
-            holder.contentText.text = "Xabar yuklanmoqda...".takeIf { message.content.isEmpty() } ?: message.content + if (message.edited) " (edited)" else ""
+            holder.contentText.text = message.content + if (message.edited) " (edited)" else ""
             holder.contentText.setTextColor(Color.BLACK)
             holder.contentText.setTypeface(null, Typeface.NORMAL)
-            // Matnga uzun bosish
             holder.itemView.setOnLongClickListener {
                 if (message.sender == currentUser) {
                     showEditDeleteDialog(context, message, position)
@@ -105,48 +107,143 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
             holder.replyText?.visibility = View.GONE
         }
     }
+
     private fun showOtherUserOptionsDialog(context: Context, message: Message, position: Int) {
-        val options = arrayOf("Delete for me", "Copy")
-        AlertDialog.Builder(context)
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> deleteMessage(message, position, false) // Faqat mahalliy o‘chirish
-                    1 -> copyMessage(context, message)
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_reaction_options, null)
+        val dialog = AlertDialog.Builder(context) // dialog bu yerda e’lon qilindi
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+        val reactionLayout = dialogView.findViewById<LinearLayout>(R.id.reaction_layout)
+        val reactions = arrayOf("👍", "❤️", "😂", "😮", "😢", "😡")
+
+        reactions.forEach { reaction ->
+            val textView = TextView(context).apply {
+                text = reaction
+                textSize = 20f
+                setPadding(8, 4, 8, 4)
+                setOnClickListener {
+                    message.reaction = reaction
+                    notifyItemChanged(position)
+                    val json = JSONObject().apply {
+                        put("content", message.content)
+                        put("action", "react")
+                        put("msg_id", message.id)
+                        put("reaction", reaction)
+                    }
+                    (context as? ChatActivity)?.sendMessage(json.toString())
+                    dialog.dismiss()
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            reactionLayout.addView(textView)
+        }
+
+        dialogView.findViewById<Button>(R.id.delete_for_me_button)?.setOnClickListener {
+            deleteMessage(message, position, false)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.copy_button)?.setOnClickListener {
+            copyMessage(context, message)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun showEditDeleteDialog(context: Context, message: Message, position: Int) {
-        val options = arrayOf("Edit", "Delete for me", "Delete for all", "Copy")
-        AlertDialog.Builder(context)
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> showEditDialog(context, message, position)
-                    1 -> deleteMessage(message, position, false)
-                    2 -> deleteMessage(message, position, true)
-                    3 -> copyMessage(context, message)
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_reaction_options_owner, null)
+        val dialog = AlertDialog.Builder(context) // dialog bu yerda e’lon qilindi
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+        val reactionLayout = dialogView.findViewById<LinearLayout>(R.id.reaction_layout)
+        val reactions = arrayOf("👍", "❤️", "😂", "😮", "😢", "😡")
+
+        reactions.forEach { reaction ->
+            val textView = TextView(context).apply {
+                text = reaction
+                textSize = 20f
+                setPadding(8, 4, 8, 4)
+                setOnClickListener {
+                    message.reaction = reaction
+                    notifyItemChanged(position)
+                    val json = JSONObject().apply {
+                        put("content", message.content)
+                        put("action", "react")
+                        put("msg_id", message.id)
+                        put("reaction", reaction)
+                    }
+                    (context as? ChatActivity)?.sendMessage(json.toString())
+                    dialog.dismiss()
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+            reactionLayout.addView(textView)
+        }
 
+        dialogView.findViewById<Button>(R.id.edit_button)?.setOnClickListener {
+            showEditDialog(context, message, position)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.delete_for_me_button)?.setOnClickListener {
+            deleteMessage(message, position, false)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.delete_for_all_button)?.setOnClickListener {
+            deleteMessage(message, position, true)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.copy_button)?.setOnClickListener {
+            copyMessage(context, message)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
     private fun showImageOptionsDialog(context: Context, message: Message, position: Int) {
-        val options = arrayOf("Delete for me", "Delete for all", "Copy")
-        AlertDialog.Builder(context)
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> deleteMessage(message, position, false)
-                    1 -> deleteMessage(message, position, true)
-                    2 -> copyMessage(context, message)
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_reaction_options_owner, null)
+        val dialog = AlertDialog.Builder(context) // dialog bu yerda e’lon qilindi
+            .setView(dialogView)
+            .setNegativeButton("Cancel", null)
+            .create()
+        val reactionLayout = dialogView.findViewById<LinearLayout>(R.id.reaction_layout)
+        val reactions = arrayOf("👍", "❤️", "😂", "😮", "😢", "😡")
+
+        reactions.forEach { reaction ->
+            val textView = TextView(context).apply {
+                text = reaction
+                textSize = 20f
+                setPadding(8, 4, 8, 4)
+                setOnClickListener {
+                    message.reaction = reaction
+                    notifyItemChanged(position)
+                    val json = JSONObject().apply {
+                        put("content", message.content)
+                        put("action", "react")
+                        put("msg_id", message.id)
+                        put("reaction", reaction)
+                    }
+                    (context as? ChatActivity)?.sendMessage(json.toString())
+                    dialog.dismiss()
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+            reactionLayout.addView(textView)
+        }
 
+        dialogView.findViewById<Button>(R.id.delete_for_me_button)?.setOnClickListener {
+            deleteMessage(message, position, false)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.delete_for_all_button)?.setOnClickListener {
+            deleteMessage(message, position, true)
+            dialog.dismiss()
+        }
+        dialogView.findViewById<Button>(R.id.copy_button)?.setOnClickListener {
+            copyMessage(context, message)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
     private fun showPermanentDeleteDialog(context: Context, message: Message, position: Int) {
         AlertDialog.Builder(context)
             .setTitle("Xabarni to‘liq o‘chirish")
@@ -193,7 +290,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
 
     private fun deleteMessage(message: Message, position: Int, deleteForAll: Boolean) {
         if (deleteForAll && message.sender == currentUser) {
-            // "Delete for all" faqat o‘z xabarimiz uchun serverga yuboriladi
             message.deleted = true
             message.content = "This message was deleted"
             notifyItemChanged(position)
@@ -208,10 +304,8 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
                 it.sendMessage(json.toString())
             }
         } else {
-            // "Delete for me" yoki boshqa foydalanuvchi xabari - mahalliy izsiz o‘chirish
             messages.removeAt(position)
             notifyItemRemoved(position)
-            // Serverga yuborilmaydi, chunki faqat mahalliy o‘chirish
         }
     }
 
@@ -237,8 +331,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
         Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
     }
 
-
-
     override fun getItemCount() = messages.size
 
     override fun getItemViewType(position: Int): Int {
@@ -251,25 +343,6 @@ class MessageAdapter(private val currentUser: String) : RecyclerView.Adapter<Mes
     }
 
     fun updateUsers(users: List<User>) {}
-
-    private fun showReactionDialog(context: Context, message: Message, position: Int) {
-        val reactions = arrayOf("👍", "❤️", "😂", "😮", "😢", "😡")
-        AlertDialog.Builder(context)
-            .setTitle("Reaksiya qo‘shish")
-            .setItems(reactions) { _, which ->
-                message.reaction = reactions[which]
-                notifyItemChanged(position)
-                val json = JSONObject().apply {
-                    put("content", message.content)
-                    put("action", "react")
-                    put("msg_id", message.id)
-                    put("reaction", message.reaction)
-                }
-                (context as? ChatActivity)?.sendMessage(json.toString())
-            }
-            .setNegativeButton("Bekor qilish", null)
-            .show()
-    }
 
     fun attachSwipeToReply(recyclerView: RecyclerView) {
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
