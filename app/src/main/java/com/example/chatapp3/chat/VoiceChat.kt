@@ -9,6 +9,7 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.chatapp3.Message
 import com.example.chatapp3.R
 import com.example.chatapp3.network.NetworkUtils
 import com.example.chatapp3.network.WebSocketManager
@@ -43,6 +44,9 @@ class VoiceChat(
         return true
     }
 
+
+
+
     private fun startVoiceRecording() {
         if (!checkRecordingPermission()) {
             return
@@ -71,17 +75,37 @@ class VoiceChat(
         }
     }
 
-    private fun sendVoiceMessage(filePath: String) {
-        val voiceFile = File(filePath)
-        networkUtils.sendVoice(voiceFile, currentUser, receiver, { message ->
-            webSocketManager.sendVoice(message.content, message.id)
-            Log.d("VoiceChat", "Ovozli xabar yuborildi: ${message.content}")
-        }, { error ->
-            Log.e("VoiceChat", "Ovozli xabar yuborishda xato: $error")
-            mediaRecorderUtil.deleteRecording(filePath)
-            Toast.makeText(context, "Ovoz yuborishda xato: $error", Toast.LENGTH_SHORT).show()
-        })
-    }
+//    private fun sendVoiceMessage(filePath: String) {
+//        val voiceFile = File(filePath)
+//        networkUtils.sendVoice(voiceFile, currentUser, receiver, { message ->
+//            // Serverdan qaytgan URL ni WebSocket orqali yuboramiz
+//            val voiceUrl = message.content // Bu URL bo‘lishi kerak
+//            webSocketManager.sendVoice(voiceUrl, message.id)
+//            Log.d("VoiceChat", "Ovozli xabar yuborildi: $voiceUrl")
+//            mediaRecorderUtil.deleteRecording(filePath) // Mahalliy faylni o‘chiramiz
+//        }, { error ->
+//            Log.e("VoiceChat", "Ovozli xabar yuborishda xato: $error")
+//            mediaRecorderUtil.deleteRecording(filePath)
+//            Toast.makeText(context, "Ovoz yuborishda xato: $error", Toast.LENGTH_SHORT).show()
+//        })
+//    }
+private fun sendVoiceMessage(filePath: String) {
+    val voiceFile = File(filePath)
+    networkUtils.sendVoice(voiceFile, currentUser, receiver, { message ->
+        val voiceMessage = Message(
+            id = message.id,
+            sender = currentUser,
+            content = message.content, // URL keladi
+            timestamp = System.currentTimeMillis().toString(),
+            type = "voice" // Muhim
+        )
+        webSocketManager.sendVoice(message.content, message.id)
+        mediaRecorderUtil.deleteRecording(filePath)
+    }, { error ->
+        mediaRecorderUtil.deleteRecording(filePath)
+        Toast.makeText(context, "Xato: $error", Toast.LENGTH_SHORT).show()
+    })
+}
 
     fun handlePermissionResult(requestCode: Int, grantResults: IntArray) {
         if (requestCode == 100 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

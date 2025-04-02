@@ -22,6 +22,10 @@ class VoiceMessage(private val adapter: MessageAdapter, private val currentUser:
             timestampText.text = message.timestamp
             reactionText.text = message.reaction ?: ""
             durationText.text = "0:00"
+            
+            if (message.type == "voice") {
+                setupVoicePlayer(message) // URL dan foydalanadi
+            }
 
             setupVoicePlayer(message)
             setupReply(message)
@@ -30,6 +34,8 @@ class VoiceMessage(private val adapter: MessageAdapter, private val currentUser:
                 true
             }
         }
+
+
 
         private fun setupVoicePlayer(message: Message) {
             playButton.setOnClickListener {
