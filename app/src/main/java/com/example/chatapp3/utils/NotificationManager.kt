@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.example.chatapp3.ChatActivity
+import com.example.chatapp3.chat.ChatActivity
 import com.example.chatapp3.R
 
 class NotificationManager(private val context: Context) {

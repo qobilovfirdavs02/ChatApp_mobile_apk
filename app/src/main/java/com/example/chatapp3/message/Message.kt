@@ -8,5 +8,6 @@ data class Message(
     var edited: Boolean = false,
     var deleted: Boolean = false,
     var reaction: String? = null, // Reaksiya uchun
-    var replyToId: Int? = null    // Javob berilgan xabar IDsi uchun
+    var replyToId: Int? = null,
+    val type: String = "text"// Javob berilgan xabar IDsi uchun
 )
