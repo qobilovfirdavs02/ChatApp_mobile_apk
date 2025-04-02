@@ -1,54 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:background="@drawable/sent_message_background"
-    android:layout_gravity="start"> <!-- Chap tarafga joylash -->
-
-    <TextView
-        android:id="@+id/senderText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textColor="#757575"
-        android:visibility="gone" />
+    android:gravity="end"
+    android:padding="8dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="@drawable/sent_message_background"
+        android:orientation="horizontal"
+        android:padding="4dp">
 
         <Button
             android:id="@+id/playButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Play"
-            android:textSize="12sp"
-            android:padding="8dp"
-            android:background="@drawable/button_blue_oval" />
+            android:text="Play" />
+
+        <TextView
+            android:id="@+id/voiceDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:00"
+            android:textColor="@android:color/black"
+            android:layout_marginStart="8dp" />
 
         <TextView
             android:id="@+id/timestampText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:textColor="#757575"
+            android:text="12:00"
+            android:textColor="@android:color/black"
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:id="@+id/messageReaction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="16sp"
             android:layout_marginStart="8dp" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/messageReaction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/replyContent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textColor="#757575"
-        android:visibility="gone" />
 </LinearLayout>
